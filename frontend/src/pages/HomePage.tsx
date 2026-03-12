@@ -45,7 +45,7 @@ export function HomePage() {
           api.getProjects(),
           api.getExperience(),
           api.getBlogPosts(),
-          api.getGitHubActivity()
+          api.getGitHubActivity().catch(() => [])
         ]);
 
         if (!active) {

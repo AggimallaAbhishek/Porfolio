@@ -129,6 +129,9 @@ Change these in `.env` or `backend/.env` before deploying publicly.
 - `SMTP_TO_EMAIL`
 - `SMTP_USE_TLS`
 
+Note: `BACKEND_CORS_ORIGINS` should be a JSON array string, for example:
+`["http://localhost:5173","http://localhost"]`
+
 ### Frontend `.env.local`
 
 - `VITE_API_BASE_URL`

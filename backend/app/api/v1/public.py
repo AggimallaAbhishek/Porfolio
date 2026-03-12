@@ -1,4 +1,5 @@
 from collections import defaultdict
+import logging
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session, joinedload
@@ -19,6 +20,7 @@ from app.services.email import send_contact_notification
 from app.services.github import fetch_github_activity
 
 router = APIRouter(tags=["public"])
+logger = logging.getLogger(__name__)
 
 
 def _serialize_post(post: BlogPost) -> BlogPostResponse:
@@ -161,7 +163,11 @@ def create_contact_message(
 @router.get("/github/activity", response_model=list[GitHubActivityItem])
 async def get_github_activity() -> list[GitHubActivityItem]:
     settings = get_settings()
-    return await fetch_github_activity(settings.github_username)
+    try:
+        return await fetch_github_activity(settings.github_username)
+    except Exception as exc:
+        logger.warning("GitHub activity fetch failed: %s", exc)
+        return []
 
 
 @router.get("/summary", response_model=DashboardSummary)
