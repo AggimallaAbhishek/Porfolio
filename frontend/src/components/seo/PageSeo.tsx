@@ -5,12 +5,17 @@ interface PageSeoProps {
   description: string;
   path?: string;
   image?: string;
+  siteName?: string;
 }
 
-export function PageSeo({ title, description, path = "/", image }: PageSeoProps) {
+export function PageSeo({ title, description, path = "/", image, siteName }: PageSeoProps) {
   const siteUrl = import.meta.env.VITE_SITE_URL ?? "http://localhost:5173";
   const canonical = `${siteUrl}${path}`;
-  const fullTitle = `${title} | Aggimalla Abhishek`;
+  const resolvedSiteName =
+    siteName?.trim() ||
+    import.meta.env.VITE_SITE_NAME ||
+    "Aggimalla Abhishek";
+  const fullTitle = `${title} | ${resolvedSiteName}`;
 
   return (
     <Helmet>

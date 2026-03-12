@@ -34,14 +34,15 @@ export function AdminDashboardPage() {
       return;
     }
 
+    const authToken = token;
     let active = true;
 
-    async function load() {
+    async function load(activeToken: string) {
       try {
         const [projectResponse, blogResponse, messageResponse] = await Promise.all([
-          api.getAdminProjects(token),
-          api.getAdminBlogPosts(token),
-          api.getMessages(token)
+          api.getAdminProjects(activeToken),
+          api.getAdminBlogPosts(activeToken),
+          api.getMessages(activeToken)
         ]);
 
         if (!active) {
@@ -62,7 +63,7 @@ export function AdminDashboardPage() {
       }
     }
 
-    load();
+    load(authToken);
 
     return () => {
       active = false;
