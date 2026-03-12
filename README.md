@@ -97,8 +97,6 @@ Services:
 - Backend API: proxied through `http://localhost/api/v1`
 - PostgreSQL: `localhost:5432`
 
-## Admin Credentials
-
 Change these in `.env` or `backend/.env` before deploying publicly.
 
 ## Environment Variables
