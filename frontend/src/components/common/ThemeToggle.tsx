@@ -25,7 +25,7 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={() => setTheme((value) => (value === "dark" ? "light" : "dark"))}
-      className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-cyan/50 hover:text-cyan dark:text-white light:border-slate-300 light:bg-white/90 light:text-slate-900"
+      className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white/90 px-4 py-2 text-sm font-medium text-slate-900 transition hover:border-cyan hover:text-cyan dark:border-white/15 dark:bg-white/10 dark:text-white"
       aria-label="Toggle theme"
     >
       {theme === "dark" ? <SunMedium size={16} /> : <MoonStar size={16} />}

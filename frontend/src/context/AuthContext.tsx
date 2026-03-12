@@ -2,7 +2,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useState,
   type PropsWithChildren
 } from "react";
@@ -67,27 +66,24 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, [token]);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      token,
-      user,
-      initializing,
-      login: async (email: string, password: string) => {
-        const response = await api.login({ email, password });
-        setToken(response.access_token);
-        setUser(response.user);
-        localStorage.setItem(TOKEN_KEY, response.access_token);
-        localStorage.setItem(USER_KEY, JSON.stringify(response.user));
-      },
-      logout: () => {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(USER_KEY);
-        setToken(null);
-        setUser(null);
-      }
-    }),
-    [initializing, token, user]
-  );
+  const value: AuthContextValue = {
+    token,
+    user,
+    initializing,
+    login: async (email: string, password: string) => {
+      const response = await api.login({ email, password });
+      setToken(response.access_token);
+      setUser(response.user);
+      localStorage.setItem(TOKEN_KEY, response.access_token);
+      localStorage.setItem(USER_KEY, JSON.stringify(response.user));
+    },
+    logout: () => {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      setToken(null);
+      setUser(null);
+    }
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
