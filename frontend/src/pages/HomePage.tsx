@@ -95,7 +95,8 @@ export function HomePage() {
     <div className="min-h-screen text-slate-900 dark:text-white">
       <PageSeo
         title="Portfolio"
-        description="Portfolio of Aggimalla Abhishek, a Data Science and AI student at IIIT Dharwad building intelligent systems and full-stack applications."
+        description={`${data.profile.name}, ${data.profile.role}. ${data.profile.tagline}`}
+        siteName={data.profile.name}
       />
       <Navbar profile={data.profile} />
       <main>

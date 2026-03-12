@@ -15,6 +15,13 @@ export function HeroSection({
   profile: Profile;
   summary: DashboardSummary;
 }) {
+  const [firstName, ...restName] = profile.name.trim().split(" ");
+  const lastName = restName.join(" ");
+  const highlightName = lastName || firstName;
+  const headlineName = lastName ? firstName : "";
+  const currentYear = new Date().getFullYear();
+  const badgeText = profile.location || profile.role;
+
   const socialLinks = [
     { label: "GitHub", href: profile.social_links.github, icon: Github },
     { label: "LinkedIn", href: profile.social_links.linkedin, icon: Linkedin },
@@ -34,14 +41,14 @@ export function HeroSection({
             variants={fadeUp}
             className="inline-flex rounded-full border border-cyan/30 bg-cyan/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.35em] text-cyan"
           >
-            Portfolio 2026
+            Portfolio {currentYear}
           </motion.span>
 
           <motion.div variants={fadeUp} className="space-y-5">
             <h1 className="font-display text-5xl leading-[0.95] text-slate-950 dark:text-white sm:text-6xl lg:text-7xl">
-              Aggimalla
+              {headlineName ? `${headlineName} ` : null}
               <span className="block bg-gradient-to-r from-cyan via-white to-coral bg-clip-text text-transparent">
-                Abhishek
+                {highlightName}
               </span>
             </h1>
             <p className="max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-300">
@@ -97,9 +104,11 @@ export function HeroSection({
                   <p className="text-sm uppercase tracking-[0.3em] text-cyan">Focus Areas</p>
                   <h2 className="mt-3 font-display text-3xl text-white">AI + Backend + Data</h2>
                 </div>
-                <span className="animate-float rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm text-white">
-                  IIIT Dharwad
-                </span>
+                {badgeText ? (
+                  <span className="animate-float rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm text-white">
+                    {badgeText}
+                  </span>
+                ) : null}
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">

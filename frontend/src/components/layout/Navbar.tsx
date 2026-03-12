@@ -17,6 +17,7 @@ export function Navbar({ profile }: { profile?: Profile | null }) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const roleLabel = profile?.role?.split(" at ")[0] ?? "Data Science & AI";
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-white/70 backdrop-blur-xl dark:bg-slate-950/70">
@@ -29,8 +30,8 @@ export function Navbar({ profile }: { profile?: Profile | null }) {
             <p className="font-display text-base font-semibold text-slate-950 dark:text-white">
               {profile?.name ?? "Aggimalla Abhishek"}
             </p>
-            <p className="text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
-              Data Science & AI
+            <p className="max-w-[14rem] truncate text-xs uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">
+              {roleLabel}
             </p>
           </div>
         </Link>

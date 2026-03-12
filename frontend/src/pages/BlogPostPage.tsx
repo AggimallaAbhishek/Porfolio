@@ -75,6 +75,7 @@ export function BlogPostPage() {
         description={post.excerpt}
         path={`/blog/${post.slug}`}
         image={toAssetUrl(post.cover_image)}
+        siteName={profile?.name}
       />
       <Navbar profile={profile} />
       <main className="section-shell section-gap">

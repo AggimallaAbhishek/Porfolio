@@ -17,6 +17,8 @@ export function ContactSection({ profile }: { profile: Profile }) {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const emailHref = profile.social_links.email;
+  const displayEmail = emailHref?.replace(/^mailto:/, "") || "hello@portfolio.com";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -49,10 +51,10 @@ export function ContactSection({ profile }: { profile: Profile }) {
               Email
             </p>
             <a
-              href={profile.social_links.email}
+              href={emailHref}
               className="font-display text-2xl text-slate-950 hover:text-cyan dark:text-white"
             >
-              abhishek.aggimalla.dev@gmail.com
+              {displayEmail}
             </a>
             <p className="text-sm leading-7 text-slate-600 dark:text-slate-400">
               I’m happy to discuss internships, research ideas, portfolio collaborations, and interesting product problems.

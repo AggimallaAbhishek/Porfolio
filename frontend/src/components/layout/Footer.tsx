@@ -17,7 +17,7 @@ export function Footer({ profile }: { profile?: Profile | null }) {
             {profile?.name ?? "Aggimalla Abhishek"}
           </p>
           <p className="mt-2 max-w-xl text-sm text-slate-600 dark:text-slate-400">
-            Building intelligent systems, secure backends, and thoughtful data-driven products.
+            {profile?.tagline ?? "Building intelligent systems, secure backends, and thoughtful data-driven products."}
           </p>
         </div>
 

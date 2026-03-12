@@ -53,8 +53,13 @@ export function BlogPage() {
     <div className="min-h-screen text-slate-900 dark:text-white">
       <PageSeo
         title="Blog"
-        description="Notes and articles by Aggimalla Abhishek on AI engineering, backend systems, and product building."
+        description={
+          profile
+            ? `Notes and articles by ${profile.name} on AI engineering, backend systems, and product building.`
+            : "Notes and articles on AI engineering, backend systems, and product building."
+        }
         path="/blog"
+        siteName={profile?.name}
       />
       <Navbar profile={profile} />
       <main className="section-shell section-gap space-y-10">

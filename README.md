@@ -134,6 +134,7 @@ Change these in `.env` or `backend/.env` before deploying publicly.
 - `VITE_API_BASE_URL`
 - `VITE_API_ASSET_URL`
 - `VITE_SITE_URL`
+- `VITE_SITE_NAME`
 - `VITE_GA_MEASUREMENT_ID`
 - `VITE_PLAUSIBLE_DOMAIN`
 
