@@ -44,6 +44,7 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ delay: index * 0.08 }}
+              whileHover={{ y: -8 }}
               className="glass-card overflow-hidden"
             >
               {post.cover_image ? (

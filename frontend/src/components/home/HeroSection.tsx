@@ -73,33 +73,39 @@ export function HeroSection({
           </motion.p>
 
           <motion.div variants={fadeUp} className="flex flex-wrap items-center gap-4">
-            <a
+            <motion.a
               href="#projects"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan to-coral px-6 py-3 font-semibold text-slate-950 transition hover:scale-[1.02]"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan to-coral px-6 py-3 font-semibold text-slate-950 transition"
             >
               View Projects
               <ArrowRight size={18} />
-            </a>
-            <a
+            </motion.a>
+            <motion.a
               href="#contact"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               className="inline-flex items-center gap-2 rounded-full border border-white/15 px-6 py-3 font-semibold text-slate-800 transition hover:border-cyan hover:text-cyan dark:text-white"
             >
               Contact Me
-            </a>
+            </motion.a>
           </motion.div>
 
           <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
             {socialLinks.map(({ label, href, icon: Icon }) => (
-              <a
+              <motion.a
                 key={label}
                 href={href}
                 target="_blank"
                 rel="noreferrer"
+                whileHover={{ scale: 1.05, y: -2 }}
+                whileTap={{ scale: 0.95 }}
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/60 px-4 py-2 text-sm text-slate-800 transition hover:border-cyan hover:text-cyan dark:bg-white/10 dark:text-slate-100"
               >
                 <Icon size={16} />
                 {label}
-              </a>
+              </motion.a>
             ))}
           </motion.div>
         </div>

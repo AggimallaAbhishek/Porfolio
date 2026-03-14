@@ -31,6 +31,7 @@ export function GitHubActivitySection({ items }: { items: GitHubActivityItem[] }
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ delay: index * 0.06 }}
+              whileHover={{ y: -6 }}
               className="glass-card flex h-full flex-col justify-between gap-6 p-6"
             >
               <div className="space-y-4">

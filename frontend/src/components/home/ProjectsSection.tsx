@@ -28,10 +28,19 @@ export function ProjectsSection({ projects }: { projects: Project[] }) {
             description="Featured projects are loaded from the FastAPI backend, so you can keep this portfolio fresh from the admin dashboard."
           />
 
-          <div className="flex flex-wrap gap-2">
+          <motion.div 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            transition={{ staggerChildren: 0.05 }}
+            className="flex flex-wrap gap-2"
+          >
             {technologies.map((technology) => (
-              <button
+              <motion.button
                 key={technology}
+                variants={{ hidden: { opacity: 0, scale: 0.9 }, visible: { opacity: 1, scale: 1 } }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 type="button"
                 onClick={() => {
                   startTransition(() => setSelectedTech(technology));
@@ -43,9 +52,9 @@ export function ProjectsSection({ projects }: { projects: Project[] }) {
                 }`}
               >
                 {technology}
-              </button>
+              </motion.button>
             ))}
-          </div>
+          </motion.div>
         </div>
 
         <motion.div className="grid gap-6 lg:grid-cols-2" style={{ y: gridRise }}>
@@ -56,6 +65,7 @@ export function ProjectsSection({ projects }: { projects: Project[] }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ delay: index * 0.08 }}
+              whileHover={{ y: -8 }}
               className="glass-card overflow-hidden"
             >
               {project.images[0]?.image_url ? (
