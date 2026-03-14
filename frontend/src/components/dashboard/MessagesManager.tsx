@@ -1,4 +1,6 @@
-import { MailOpen, Trash2 } from "lucide-react";
+import { ExternalLink, MailOpen, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { motion } from "framer-motion";
 
 import { api } from "../../api/client";
 import type { ContactMessage } from "../../types";
@@ -12,85 +14,164 @@ export function MessagesManager({
   messages: ContactMessage[];
   onMessagesChange: (messages: ContactMessage[]) => void;
 }) {
-  async function updateMessage(message: ContactMessage, payload: { status: string; is_read: boolean }) {
+  const [selected, setSelected] = useState<ContactMessage | null>(
+    messages[0] ?? null
+  );
+
+  async function updateMessage(
+    message: ContactMessage,
+    payload: { status: string; is_read: boolean }
+  ) {
     const updated = await api.updateMessage(token, message.id, payload);
-    onMessagesChange(messages.map((item) => (item.id === updated.id ? updated : item)));
+    onMessagesChange(messages.map((m) => (m.id === updated.id ? updated : m)));
+    if (selected?.id === updated.id) setSelected(updated);
   }
 
   async function deleteMessage(messageId: number) {
-    if (!window.confirm("Delete this message?")) {
-      return;
-    }
+    if (!window.confirm("Delete this message?")) return;
     await api.deleteMessage(token, messageId);
-    onMessagesChange(messages.filter((message) => message.id !== messageId));
+    const remaining = messages.filter((m) => m.id !== messageId);
+    onMessagesChange(remaining);
+    setSelected(remaining[0] ?? null);
+  }
+
+  if (messages.length === 0) {
+    return (
+      <div className="glass-card flex items-center justify-center p-16 text-slate-500 text-sm">
+        No messages yet.
+      </div>
+    );
   }
 
   return (
-    <div className="grid gap-5">
-      {messages.map((message) => (
-        <article key={message.id} className="glass-card space-y-5 p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <h3 className="font-display text-2xl text-slate-950 dark:text-white">{message.subject}</h3>
-                <span
-                  className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] ${
-                    message.is_read
-                      ? "border border-emerald-400/20 bg-emerald-400/10 text-emerald-400"
-                      : "border border-coral/30 bg-coral/10 text-coral"
+    <div className="glass-card overflow-hidden">
+      <div className="flex h-[calc(100vh-180px)] min-h-[400px]">
+        {/* ── Left inbox list ── */}
+        <aside className="w-72 shrink-0 overflow-y-auto border-r border-white/10">
+          <div className="border-b border-white/10 px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+              Inbox ({messages.length})
+            </p>
+          </div>
+          <ul>
+            {messages.map((msg) => (
+              <li key={msg.id}>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setSelected(msg);
+                    if (!msg.is_read)
+                      await updateMessage(msg, { status: msg.status, is_read: true });
+                  }}
+                  className={`flex w-full flex-col gap-1 border-b border-white/5 px-4 py-3 text-left transition hover:bg-white/5 ${
+                    selected?.id === msg.id ? "bg-white/10" : ""
                   }`}
                 >
-                  {message.is_read ? "Read" : "New"}
-                </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-sm font-semibold text-slate-200">
+                      {msg.name}
+                    </span>
+                    {!msg.is_read && (
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-coral" />
+                    )}
+                  </div>
+                  <span className="truncate text-xs text-slate-400">{msg.subject}</span>
+                  <span className="text-[10px] text-slate-600">
+                    {new Date(msg.created_at).toLocaleDateString()}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </aside>
+
+        {/* ── Right message detail ── */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {selected ? (
+            <motion.div
+              key={selected.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-1 flex-col overflow-hidden"
+            >
+              {/* Message header */}
+              <div className="flex flex-wrap items-start justify-between gap-4 border-b border-white/10 px-6 py-4">
+                <div>
+                  <h2 className="font-display text-xl font-bold text-white">
+                    {selected.subject}
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    From: {selected.name}{" "}
+                    <a
+                      href={`mailto:${selected.email}`}
+                      className="text-cyan hover:underline"
+                    >
+                      &lt;{selected.email}&gt;
+                    </a>
+                    {" · "}
+                    {new Date(selected.created_at).toLocaleString()}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <select
+                    value={selected.status}
+                    onChange={(e) =>
+                      updateMessage(selected, {
+                        status: e.target.value,
+                        is_read: selected.is_read
+                      })
+                    }
+                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300 outline-none"
+                  >
+                    <option value="new">New</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      updateMessage(selected, {
+                        status: selected.status,
+                        is_read: !selected.is_read
+                      })
+                    }
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-slate-300 transition hover:text-white"
+                  >
+                    <MailOpen size={13} />
+                    {selected.is_read ? "Mark unread" : "Mark read"}
+                  </button>
+                  <a
+                    href={`mailto:${selected.email}?subject=Re: ${encodeURIComponent(selected.subject)}`}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-cyan/30 bg-cyan/10 px-3 py-2 text-xs text-cyan transition hover:bg-cyan/20"
+                  >
+                    <ExternalLink size={13} />
+                    Reply
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => deleteMessage(selected.id)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs text-rose-400 transition hover:bg-rose-500/20"
+                  >
+                    <Trash2 size={13} />
+                    Delete
+                  </button>
+                </div>
               </div>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                {message.name} • {message.email}
-              </p>
-              <p className="mt-2 text-xs uppercase tracking-[0.25em] text-slate-500 dark:text-slate-400">
-                {new Date(message.created_at).toLocaleString("en-US", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                  hour: "numeric",
-                  minute: "numeric"
-                })}
-              </p>
+
+              {/* Message body */}
+              <div className="flex-1 overflow-y-auto px-6 py-6">
+                <p className="text-sm leading-8 text-slate-300 whitespace-pre-wrap">
+                  {selected.message}
+                </p>
+              </div>
+            </motion.div>
+          ) : (
+            <div className="flex flex-1 items-center justify-center text-sm text-slate-500">
+              Select a message to read
             </div>
-            <div className="flex flex-wrap gap-3">
-              <select
-                value={message.status}
-                onChange={(event) =>
-                  updateMessage(message, { status: event.target.value, is_read: message.is_read })
-                }
-                className="rounded-full border border-white/10 bg-white/70 px-4 py-2 text-sm text-slate-900 dark:bg-white/10 dark:text-white"
-              >
-                <option value="new">new</option>
-                <option value="in-progress">in-progress</option>
-                <option value="resolved">resolved</option>
-              </select>
-              <button
-                type="button"
-                onClick={() => updateMessage(message, { status: message.status, is_read: !message.is_read })}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm text-slate-700 dark:text-slate-200"
-              >
-                <MailOpen size={16} />
-                {message.is_read ? "Mark unread" : "Mark read"}
-              </button>
-              <button
-                type="button"
-                onClick={() => deleteMessage(message.id)}
-                className="inline-flex items-center gap-2 rounded-full border border-rose-400/20 px-4 py-2 text-sm text-rose-400"
-              >
-                <Trash2 size={16} />
-                Delete
-              </button>
-            </div>
-          </div>
-          <p className="rounded-3xl border border-white/10 bg-white/60 p-5 text-sm leading-8 text-slate-700 dark:bg-white/5 dark:text-slate-300">
-            {message.message}
-          </p>
-        </article>
-      ))}
+          )}
+        </div>
+      </div>
     </div>
   );
 }

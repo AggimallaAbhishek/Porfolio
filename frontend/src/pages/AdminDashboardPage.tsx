@@ -1,28 +1,25 @@
-import { FolderKanban, LogOut, Mailbox, NotebookTabs, Sparkles } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { CheckCheck, FolderKanban, Mailbox, MessageCircle, NotebookTabs, Rocket } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import { api } from "../api/client";
-import { LoadingPanel } from "../components/common/LoadingPanel";
+import { ActivityFeed } from "../components/dashboard/ActivityFeed";
+import { DashboardSidebar } from "../components/dashboard/DashboardSidebar";
+import { DashboardTopBar } from "../components/dashboard/DashboardTopBar";
+import { OverviewCharts } from "../components/dashboard/OverviewCharts";
+import { StatsCard } from "../components/dashboard/StatsCard";
 import { BlogManager } from "../components/dashboard/BlogManager";
 import { MessagesManager } from "../components/dashboard/MessagesManager";
 import { ProjectManager } from "../components/dashboard/ProjectManager";
+import { LoadingPanel } from "../components/common/LoadingPanel";
 import { PageSeo } from "../components/seo/PageSeo";
 import { useAuth } from "../context/AuthContext";
 import type { BlogPost, ContactMessage, Project } from "../types";
 
-type Tab = "overview" | "projects" | "blog" | "messages";
-
-const tabs: { id: Tab; label: string; icon: typeof Sparkles }[] = [
-  { id: "overview", label: "Overview", icon: Sparkles },
-  { id: "projects", label: "Projects", icon: FolderKanban },
-  { id: "blog", label: "Blog", icon: NotebookTabs },
-  { id: "messages", label: "Messages", icon: Mailbox }
-];
+type Section = "overview" | "projects" | "blog" | "messages" | "settings";
 
 export function AdminDashboardPage() {
   const { token, user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [active, setActive] = useState<Section>("overview");
   const [projects, setProjects] = useState<Project[]>([]);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [messages, setMessages] = useState<ContactMessage[]>([]);
@@ -30,158 +27,214 @@ export function AdminDashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) {
-      return;
-    }
-
+    if (!token) return;
     const authToken = token;
     let active = true;
 
-    async function load(activeToken: string) {
+    async function load() {
       try {
         const [projectResponse, blogResponse, messageResponse] = await Promise.all([
-          api.getAdminProjects(activeToken),
-          api.getAdminBlogPosts(activeToken),
-          api.getMessages(activeToken)
+          api.getAdminProjects(authToken),
+          api.getAdminBlogPosts(authToken),
+          api.getMessages(authToken)
         ]);
-
-        if (!active) {
-          return;
-        }
-
+        if (!active) return;
         setProjects(projectResponse);
         setPosts(blogResponse);
         setMessages(messageResponse);
-      } catch (loadError) {
-        if (active) {
-          setError(loadError instanceof Error ? loadError.message : "Unable to load dashboard");
-        }
+      } catch (e) {
+        if (active) setError(e instanceof Error ? e.message : "Failed to load dashboard");
       } finally {
-        if (active) {
-          setLoading(false);
-        }
+        if (active) setLoading(false);
       }
     }
 
-    load(authToken);
-
-    return () => {
-      active = false;
-    };
+    load();
+    return () => { active = false; };
   }, [token]);
 
-  const unreadCount = messages.filter((message) => !message.is_read).length;
+  const unreadCount = messages.filter((m) => !m.is_read).length;
+  const publishedPosts = posts.filter((p) => p.published);
 
-  if (!token) {
-    return null;
-  }
+  // Build activity feed from available data
+  const activityItems = useMemo(() => {
+    const items: { type: "project" | "blog" | "message"; label: string; time: string }[] = [];
+
+    for (const p of projects.slice(0, 3)) {
+      items.push({
+        type: "project",
+        label: `Project added: "${p.title}"`,
+        time: new Date(p.created_at).toLocaleDateString()
+      });
+    }
+    for (const post of publishedPosts.slice(0, 3)) {
+      items.push({
+        type: "blog",
+        label: `Blog published: "${post.title}"`,
+        time: post.published_at ? new Date(post.published_at).toLocaleDateString() : "—"
+      });
+    }
+    for (const msg of messages.slice(0, 3)) {
+      items.push({
+        type: "message",
+        label: `Message from ${msg.name}: "${msg.subject}"`,
+        time: new Date(msg.created_at).toLocaleDateString()
+      });
+    }
+
+    return items.sort(() => Math.random() - 0.5).slice(0, 8);
+  }, [projects, publishedPosts, messages]);
+
+  if (!token) return null;
 
   return (
-    <div className="min-h-screen px-4 py-6 text-slate-900 dark:text-white sm:px-6">
-      <PageSeo title="Admin Dashboard" description="Admin tools for projects, blog posts, and contact management." path="/admin" />
+    <div className="flex min-h-screen">
+      <PageSeo
+        title="Admin Dashboard"
+        description="Admin tools for projects, blog posts, and contact management."
+        path="/admin"
+      />
 
-      <div className="mx-auto max-w-7xl space-y-8">
-        <header className="glass-card p-6">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <span className="inline-flex rounded-full border border-cyan/30 bg-cyan/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-cyan">
-                Dashboard
-              </span>
-              <h1 className="mt-5 font-display text-4xl text-slate-950 dark:text-white">
-                Welcome back, {user?.full_name}
-              </h1>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 dark:text-slate-400">
-                Manage featured projects, publish blog posts with Markdown, respond to contact messages, and keep your public portfolio current.
+      {/* Left Sidebar */}
+      <DashboardSidebar
+        active={active}
+        onChange={(s) => setActive(s as Section)}
+        userName={user?.full_name ?? "Admin"}
+        userEmail={user?.email}
+        unreadCount={unreadCount}
+        onLogout={logout}
+      />
+
+      {/* Content area — offset for sidebar */}
+      <div className="flex flex-1 flex-col ml-64 min-h-screen">
+        <DashboardTopBar section={active} unreadCount={unreadCount} />
+
+        <main className="flex-1 p-6 lg:p-8 space-y-8">
+          {loading ? <LoadingPanel label="Loading dashboard…" /> : null}
+          {error ? (
+            <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 px-6 py-4 text-sm text-rose-400">
+              {error}
+            </div>
+          ) : null}
+
+          {/* ─── Overview ─── */}
+          {!loading && active === "overview" && (
+            <div className="space-y-8">
+              {/* Stats Row */}
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <StatsCard
+                  label="Total Projects"
+                  value={projects.length}
+                  icon={FolderKanban}
+                  accentColor="cyan"
+                  delay={0}
+                />
+                <StatsCard
+                  label="Published Posts"
+                  value={publishedPosts.length}
+                  icon={NotebookTabs}
+                  accentColor="purple"
+                  delay={0.08}
+                />
+                <StatsCard
+                  label="Unread Messages"
+                  value={unreadCount}
+                  icon={Mailbox}
+                  accentColor="coral"
+                  delay={0.16}
+                />
+                <StatsCard
+                  label="Total Messages"
+                  value={messages.length}
+                  icon={MessageCircle}
+                  accentColor="emerald"
+                  delay={0.24}
+                />
+              </div>
+
+              {/* Charts */}
+              <OverviewCharts projects={projects} posts={posts} />
+
+              {/* Activity + Quick Wins */}
+              <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+                <ActivityFeed items={activityItems} />
+
+                {/* Quick actions */}
+                <div className="glass-card p-6 space-y-4">
+                  <h2 className="font-display text-sm font-semibold text-white mb-2">Quick Actions</h2>
+                  {[
+                    { label: "Add a new project", icon: Rocket, onClick: () => setActive("projects"), color: "cyan" },
+                    { label: "Write a blog post", icon: NotebookTabs, onClick: () => setActive("blog"), color: "purple" },
+                    { label: "Read messages", icon: CheckCheck, onClick: () => setActive("messages"), color: "coral" }
+                  ].map(({ label, icon: Icon, onClick, color }) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={onClick}
+                      className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
+                    >
+                      <Icon size={16} className={`text-${color}`} />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ─── Projects ─── */}
+          {!loading && active === "projects" && (
+            <ProjectManager token={token} projects={projects} onProjectsChange={setProjects} />
+          )}
+
+          {/* ─── Blog ─── */}
+          {!loading && active === "blog" && (
+            <BlogManager token={token} posts={posts} onPostsChange={setPosts} />
+          )}
+
+          {/* ─── Messages ─── */}
+          {!loading && active === "messages" && (
+            <MessagesManager token={token} messages={messages} onMessagesChange={setMessages} />
+          )}
+
+          {/* ─── Settings (placeholder) ─── */}
+          {!loading && active === "settings" && (
+            <div className="glass-card p-8">
+              <h2 className="font-display text-2xl font-bold text-white mb-2">Site Settings</h2>
+              <p className="text-sm text-slate-400 mb-8">
+                Edit your profile information, social links, and public portfolio settings.
               </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to="/"
-                className="rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200"
-              >
-                View site
-              </Link>
-              <button
-                type="button"
-                onClick={logout}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200"
-              >
-                <LogOut size={16} />
-                Sign out
-              </button>
-            </div>
-          </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            <div className="rounded-3xl border border-white/10 bg-white/60 p-5 dark:bg-white/5">
-              <p className="text-sm text-slate-600 dark:text-slate-400">Projects</p>
-              <p className="mt-3 font-display text-4xl text-slate-950 dark:text-white">{projects.length}</p>
+              <div className="grid gap-6 max-w-xl">
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500">
+                    Admin Email
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    defaultValue={user?.email ?? ""}
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300 outline-none"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold uppercase tracking-widest text-slate-500">
+                    Display Name
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    defaultValue={user?.full_name ?? ""}
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300 outline-none"
+                  />
+                </div>
+                <p className="text-xs text-slate-600 italic">
+                  Profile CMS integration coming soon — edit profile via backend .env for now.
+                </p>
+              </div>
             </div>
-            <div className="rounded-3xl border border-white/10 bg-white/60 p-5 dark:bg-white/5">
-              <p className="text-sm text-slate-600 dark:text-slate-400">Posts</p>
-              <p className="mt-3 font-display text-4xl text-slate-950 dark:text-white">{posts.length}</p>
-            </div>
-            <div className="rounded-3xl border border-white/10 bg-white/60 p-5 dark:bg-white/5">
-              <p className="text-sm text-slate-600 dark:text-slate-400">Unread messages</p>
-              <p className="mt-3 font-display text-4xl text-slate-950 dark:text-white">{unreadCount}</p>
-            </div>
-          </div>
-        </header>
-
-        <div className="flex flex-wrap gap-3">
-          {tabs.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setActiveTab(id)}
-              className={`inline-flex items-center gap-2 rounded-full px-5 py-3 text-sm font-medium transition ${
-                activeTab === id
-                  ? "bg-gradient-to-r from-cyan to-coral text-slate-950"
-                  : "border border-white/10 bg-white/60 text-slate-700 dark:bg-white/10 dark:text-slate-200"
-              }`}
-            >
-              <Icon size={16} />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {loading ? <LoadingPanel label="Loading dashboard" /> : null}
-        {error ? <p className="text-rose-400">{error}</p> : null}
-
-        {!loading && activeTab === "overview" ? (
-          <section className="grid gap-6 lg:grid-cols-2">
-            <div className="glass-card p-6">
-              <h2 className="font-display text-2xl text-slate-950 dark:text-white">Development credentials</h2>
-              <p className="mt-4 text-sm leading-7 text-slate-600 dark:text-slate-400">
-                Default local admin login is seeded from backend environment variables:
-                <br />
-                <span className="font-semibold text-slate-800 dark:text-slate-100">admin@portfolio.com / admin123</span>
-              </p>
-            </div>
-            <div className="glass-card p-6">
-              <h2 className="font-display text-2xl text-slate-950 dark:text-white">What’s wired in</h2>
-              <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-600 dark:text-slate-400">
-                <li>JWT authentication for admin-only routes</li>
-                <li>Image uploads for projects and blog cover images</li>
-                <li>Markdown blog authoring with live preview</li>
-                <li>Stored contact messages with read/status updates</li>
-              </ul>
-            </div>
-          </section>
-        ) : null}
-
-        {!loading && activeTab === "projects" ? (
-          <ProjectManager token={token} projects={projects} onProjectsChange={setProjects} />
-        ) : null}
-
-        {!loading && activeTab === "blog" ? (
-          <BlogManager token={token} posts={posts} onPostsChange={setPosts} />
-        ) : null}
-
-        {!loading && activeTab === "messages" ? (
-          <MessagesManager token={token} messages={messages} onMessagesChange={setMessages} />
-        ) : null}
+          )}
+        </main>
       </div>
     </div>
   );
